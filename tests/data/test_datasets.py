@@ -99,3 +99,38 @@ def test_rmd17(test_rmd17_path):
     assert len(np.intersect1d(train_idx, val_idx)) == 0
     assert len(np.intersect1d(train_idx, test_idx)) == 0
     assert len(np.intersect1d(val_idx, test_idx)) == 0
+
+
+
+@pytest.fixture
+def test_hopv15_path():
+    path = os.path.join(os.path.dirname(__file__), "../testdata/tmp/test_hopv15.db")
+    return path
+
+
+# @pytest.mark.skip(
+#     "Run only local, not in CI. Otherwise takes too long and requires downloading "
+#     + "the data"
+# )
+def test_hopv15(test_hopv15_path):
+    from schnetpack.datasets import HOPV15
+
+    hopv15 = HOPV15(
+        test_hopv15_path,
+        num_train=10,
+        num_val=5,
+        num_test=5,
+        batch_size=5,
+    )
+    hopv15.prepare_data()
+    hopv15.setup()
+    assert len(hopv15.train_dataset) == 10
+    assert len(hopv15.val_dataset) == 5
+    assert len(hopv15.test_dataset) == 5
+
+    ds = [b for b in hopv15.train_dataloader()]
+    assert len(ds) == 2
+    ds = [b for b in hopv15.val_dataloader()]
+    assert len(ds) == 1
+    ds = [b for b in hopv15.test_dataloader()]
+    assert len(ds) == 1
