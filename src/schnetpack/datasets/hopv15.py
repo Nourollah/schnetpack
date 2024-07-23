@@ -38,26 +38,19 @@ class HOPV15(AtomsDataModule):
 
     """
 
-    # properties
-    A = "rotational_constant_A"
-    B = "rotational_constant_B"
-    C = "rotational_constant_C"
-
-    @dataclasses.dataclass
-    class ExperimentalInformation:
-        doi: typing.Final[str] = "digital_object_identifier"
-        inchikey: typing.Final[str] = "InChIKEY"
-        construction: typing.Final[str] = "construction"
-        architecture: typing.Final[str] = "architecture"
-        complement: typing.Final[str] = "complement"
-        homo: typing.Final[str] = "homo"
-        lumo: typing.Final[str] = "lumo"
-        e_gap: typing.Final[str] = "e_gap"
-        o_gap: typing.Final[str] = "o_gap"
-        pce: typing.Final[str] = "PCE"
-        V_oc: typing.Final[str] = "V_oc"
-        J_sc: typing.Final[str] = "J_sc"
-        fill_factor: typing.Final[str] = "fill_factor"
+    doi: typing.Final[str] = "digital_object_identifier"
+    inchikey: typing.Final[str] = "InChIKEY"
+    construction: typing.Final[str] = "construction"
+    architecture: typing.Final[str] = "architecture"
+    complement: typing.Final[str] = "complement"
+    homo: typing.Final[str] = "homo"
+    lumo: typing.Final[str] = "lumo"
+    e_gap: typing.Final[str] = "e_gap"
+    o_gap: typing.Final[str] = "o_gap"
+    pce: typing.Final[str] = "PCE"
+    V_oc: typing.Final[str] = "V_oc"
+    J_sc: typing.Final[str] = "J_sc"
+    fill_factor: typing.Final[str] = "fill_factor"
 
     def __init__(
             self,
@@ -69,7 +62,6 @@ class HOPV15(AtomsDataModule):
             split_file: Optional[str] = "split.npz",
             format: Optional[AtomsDataFormat] = AtomsDataFormat.ASE,
             load_properties: Optional[List[str]] = None,
-            remove_uncharacterized: bool = False,
             val_batch_size: Optional[int] = None,
             test_batch_size: Optional[int] = None,
             transforms: Optional[List[torch.nn.Module]] = None,
@@ -96,7 +88,6 @@ class HOPV15(AtomsDataModule):
             split_file: path to npz file with data partitions
             format: dataset format
             load_properties: subset of properties to load
-            remove_uncharacterized: do not include uncharacterized molecules.
             val_batch_size: validation batch size. If None, use test_batch_size, then batch_size.
             test_batch_size: test batch size. If None, use val_batch_size, then batch_size.
             transforms: Transform applied to each system separately before batching.
@@ -137,24 +128,23 @@ class HOPV15(AtomsDataModule):
         # conformers_as_data: If True, each conformer is treated as a separate molecule.
         self.conformers_as_data = conformers_as_data
 
-        self.remove_uncharacterized = remove_uncharacterized
 
     def prepare_data(self):
         if not os.path.exists(self.datapath):
             property_unit_dict = {
-                HOPV15.ExperimentalInformation.homo: "Volts",
-                HOPV15.ExperimentalInformation.lumo: "Volts",
-                HOPV15.ExperimentalInformation.pce: "percent",
-                HOPV15.ExperimentalInformation.e_gap: "Volts",
-                HOPV15.ExperimentalInformation.o_gap: "mA/cm^2",
-                # HOPV15.ExperimentalInformation.inchikey: "classes",
-                # HOPV15.ExperimentalInformation.doi: "classes",
-                # HOPV15.ExperimentalInformation.construction: "classes",
-                # HOPV15.ExperimentalInformation.architecture: "classes",
-                # HOPV15.ExperimentalInformation.complement: "classes",
-                # HOPV15.ExperimentalInformation.V_oc: "Volts",
-                # HOPV15.ExperimentalInformation.J_sc: "Volts",
-                # HOPV15.ExperimentalInformation.fill_factor: "Volts",
+                HOPV15.homo: "Volts",
+                HOPV15.lumo: "Volts",
+                HOPV15.pce: "percent",
+                HOPV15.e_gap: "Volts",
+                HOPV15.o_gap: "mA/cm^2",
+                # HOPV15.inchikey: "classes",
+                # HOPV15.doi: "classes",
+                # HOPV15.construction: "classes",
+                # HOPV15.architecture: "classes",
+                # HOPV15.complement: "classes",
+                # HOPV15.V_oc: "Volts",
+                # HOPV15.J_sc: "Volts",
+                # HOPV15.fill_factor: "Volts",
                 # "dft_outputs": "calculation",
             }
 
@@ -233,19 +223,19 @@ class HOPV15(AtomsDataModule):
             forces: typing.List[str] = lines[i + 2].strip().split(",")
             ei_properties: dict = {
                 # "inChi": inchi, @TODO: Convert this unites to proper format (int, float, normalization, ...)
-                # HOPV15.ExperimentalInformation.doi: forces[0],
-                # HOPV15.ExperimentalInformation.inchikey: forces[1],
-                # HOPV15.ExperimentalInformation.construction: forces[2],
-                # HOPV15.ExperimentalInformation.architecture: forces[3],
-                # HOPV15.ExperimentalInformation.complement: forces[4],
-                HOPV15.ExperimentalInformation.homo: np.array([float(forces[5])], dtype=np.float64),
-                HOPV15.ExperimentalInformation.lumo: np.array([float(forces[6])], dtype=np.float64),
-                HOPV15.ExperimentalInformation.e_gap: np.array([float(forces[7])], dtype=np.float64),
-                HOPV15.ExperimentalInformation.o_gap: np.array([float(forces[8])], dtype=np.float64),
-                HOPV15.ExperimentalInformation.pce: np.array([float(forces[9])], dtype=np.float64),
-                # HOPV15.ExperimentalInformation.V_oc: np.ndarray([float(forces[10])], dtype=np.float64),
-                # HOPV15.ExperimentalInformation.J_sc: np.ndarray([float(forces[11])], dtype=np.float64),
-                # HOPV15.ExperimentalInformation.fill_factor: np.ndarray([float(forces[12])], dtype=np.float64)
+                # HOPV15.doi: forces[0],
+                # HOPV15.inchikey: forces[1],
+                # HOPV15.construction: forces[2],
+                # HOPV15.architecture: forces[3],
+                # HOPV15.complement: forces[4],
+                HOPV15.homo: np.array([float(forces[5])], dtype=np.float64),
+                HOPV15.lumo: np.array([float(forces[6])], dtype=np.float64),
+                HOPV15.e_gap: np.array([float(forces[7])], dtype=np.float64),
+                HOPV15.o_gap: np.array([float(forces[8])], dtype=np.float64),
+                HOPV15.pce: np.array([float(forces[9])], dtype=np.float64),
+                # HOPV15.V_oc: np.ndarray([float(forces[10])], dtype=np.float64),
+                # HOPV15.J_sc: np.ndarray([float(forces[11])], dtype=np.float64),
+                # HOPV15.fill_factor: np.ndarray([float(forces[12])], dtype=np.float64)
                 }
             # Parse number of conformers
             num_conformers: int = int(lines[i + 4].strip())

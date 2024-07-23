@@ -11,4 +11,5 @@ from .atomistic import *
 from .casting import *
 from .neighborlist import *
 from .response import *
+from .knn import *
 from .base import *

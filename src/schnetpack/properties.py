@@ -16,6 +16,8 @@ R: Final[str] = position  #: atom positions
 cell: Final[str] = "_cell"  #: unit cell
 strain: Final[str] = "strain"
 pbc: Final[str] = "_pbc"  #: periodic boundary conditions
+knn: Final[str] = "_knn"  #: k-nearest neighbor list
+knn_index: Final[str] = "_knn_index"  #: k-nearest neighbor list indices
 
 seg_m: Final[str] = "_seg_m"  #: start indices of systems
 idx_m: Final[str] = "_idx_m"  #: indices of systems

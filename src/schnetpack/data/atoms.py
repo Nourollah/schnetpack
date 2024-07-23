@@ -25,6 +25,8 @@ import schnetpack as spk
 import schnetpack.properties as structure
 from schnetpack.transform import Transform
 
+from rich import print
+
 logger = logging.getLogger(__name__)
 
 __all__ = [
@@ -269,6 +271,7 @@ class ASEAtomsData(BaseAtomsData):
         props = self._get_properties(
             self.conn, idx, self.load_properties, self.load_structure
         )
+   # print(props)
         props = self._apply_transforms(props)
 
         return props
