@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 from schnetpack.datasets import QM9, MD17, rMD17
-
+import schnetpack.transform as trn
 
 @pytest.fixture
 def test_qm9_path():
@@ -133,4 +133,42 @@ def test_hopv15(test_hopv15_path):
     ds = [b for b in hopv15.val_dataloader()]
     assert len(ds) == 1
     ds = [b for b in hopv15.test_dataloader()]
+    assert len(ds) == 1
+
+
+@pytest.fixture
+def test_naphtha_path():
+    path = os.path.join(os.path.dirname(__file__), "../testdata/tmp/test_naphtha.db")
+    return path
+
+
+# @pytest.mark.skip(
+#     "Run only local, not in CI. Otherwise takes too long and requires downloading "
+#     + "the data"
+# )
+def test_naphtha(test_naphtha_path):
+    from schnetpack.datasets import Naphtha
+
+    naphtha = Naphtha(
+        test_naphtha_path,
+        xyz_path="/Users/masoud/Projects/schnetpack/examples/naphtha/split_xyz_files",
+        num_train=10,
+        num_val=5,
+        num_test=5,
+        batch_size=5,
+        train_transforms=[trn.KNNRepresentation(k=3, threshold=2.0)],
+        val_transforms=[trn.KNNRepresentation(k=3, threshold=2.0)],
+        test_transforms=[trn.KNNRepresentation(k=3, threshold=2.0)],
+    )
+    naphtha.prepare_data()
+    naphtha.setup()
+    assert len(naphtha.train_dataset) == 10
+    assert len(naphtha.val_dataset) == 5
+    assert len(naphtha.test_dataset) == 5
+
+    ds = [b for b in naphtha.train_dataloader()]
+    assert len(ds) == 2
+    ds = [b for b in naphtha.val_dataloader()]
+    assert len(ds) == 1
+    ds = [b for b in naphtha.test_dataloader()]
     assert len(ds) == 1

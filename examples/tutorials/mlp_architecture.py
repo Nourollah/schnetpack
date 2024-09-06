@@ -11,7 +11,7 @@ from schnetpack import properties as structure
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import wandb
 from rich.pretty import pprint
 
@@ -86,13 +86,17 @@ class QMLP(pl.LightningModule):
 		self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
 		return {'val_loss': loss}
 
-	# def on_validation_epoch_end(self) -> None:
-	# 	avg_loss = torch.stack([x['val_loss'] for x in self.validation_step_losses]).mean()
-	# 	self.log('val_loss', avg_loss, prog_bar=True)
-	# 	self.validation_step_losses.clear()
+
+# def on_validation_epoch_end(self) -> None:
+# 	avg_loss = torch.stack([x['val_loss'] for x in self.validation_step_losses]).mean()
+# 	self.log('val_loss', avg_loss, prog_bar=True)
+# 	self.validation_step_losses.clear()
 
 
-def prepare_data(data_path: pathlib.Path = pathlib.Path('./qm9tut')):
+def prepare_data(data_path: pathlib.Path = pathlib.Path('./qm9tut'),
+                 k: int = 10,
+                 distance_threshold: float = 100.0,
+                 num_workers: int = 2):
 	if not os.path.exists(data_path):
 		os.makedirs(data_path)
 
@@ -106,11 +110,11 @@ def prepare_data(data_path: pathlib.Path = pathlib.Path('./qm9tut')):
 			trn.RemoveOffsets(QM9.G, remove_mean=True, remove_atomrefs=True),
 			trn.CastTo32()
 		],
-		train_transforms=[trn.KNNRepresentation(k=4, threshold=2.0)],
-		val_transforms=[trn.KNNRepresentation(k=4, threshold=2.0)],
-		test_transforms=[trn.KNNRepresentation(k=4, threshold=2.0)],
+		train_transforms=[trn.KNNRepresentation(k=k, threshold=distance_threshold)],
+		val_transforms=[trn.KNNRepresentation(k=k, threshold=distance_threshold)],
+		test_transforms=[trn.KNNRepresentation(k=k, threshold=distance_threshold)],
 		property_units={QM9.G: 'Ha'},
-		num_workers=2,
+		num_workers=num_workers,
 		split_file=os.path.join(data_path, "split.npz"),
 		pin_memory=True,
 		remove_uncharacterized=True,
@@ -122,11 +126,26 @@ def prepare_data(data_path: pathlib.Path = pathlib.Path('./qm9tut')):
 
 
 def main():
-	wandb.init(project="MLP", entity="KRG-Cardiff")
+	config = {
+		"num_workers": 2,
+		"distance_threshold": 100.0,
+		"k": 10,
+		"input_size": 65,
+		"hidden_sizes": [100, 100, 100, 100],
+		"output_size": 1,
+		"epochs": 100,
+	}
+	wandb.init(project="MLP",
+	           entity="KRG-Cardiff",
+	           config=config)
 
-	qm9data = prepare_data()
+	qm9data = prepare_data(k=config["k"],
+	                       distance_threshold=config["distance_threshold"],
+	                       num_workers=config["num_workers"])
 
-	model = QMLP(input_size=65, hidden_sizes=[100, 100, 100, 100], output_size=1)
+	model = QMLP(input_size=config["input_size"],
+	             hidden_sizes=config["hidden_sizes"],
+	             output_size=config["output_size"])
 
 	wandb_logger = WandbLogger(project="MLP")
 
@@ -137,8 +156,16 @@ def main():
 		monitor='val_loss'
 	)
 
+	early_stop_callback = EarlyStopping(
+		monitor='val_loss',
+		min_delta=0.00,
+		patience=10,
+		verbose=False,
+		mode='min'
+	)
+
 	trainer = pl.Trainer(
-		max_epochs=100,
+		max_epochs=config["epochs"],
 		logger=wandb_logger,
 		callbacks=[checkpoint_callback],
 		# accelerator='gpu' if torch.cuda.is_available() else 'cpu',  # Use GPU if available
